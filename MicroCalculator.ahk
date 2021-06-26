@@ -1,4 +1,4 @@
-﻿;Calculator v1.0: initial release
+;Calculator v1.0: initial release
 ;Calculator v1.1.1: operations like 1+1.5 would give 2.5000000 with all the 0's, (fixed)
 ;Calculator v1.1.2: bug with division where if 20/6 was put 3 would come out, rounded (fixed)
 ;Calculator v1.2: taken out the "Back" button used to eliminate the last digit, backspace can also do this, in replacement, an UpDown system was added for rounding, place in how many decimals you'd like to have e.g: place 4 in the up down edit thing and the answer will have 4 decimal spaces if given the need for decimals
@@ -9,6 +9,7 @@
 ;Calculator v1.3: huge update!! Replaced form of operating, now you can do 3+4+1 and get 8, before you could only do one operation (3+4), more would display a 0 (keep in mind you still cannot do 4+3-1, as it would display 0 not 6), negatives are now supported, 5+-1 would be 4, shorter script = less kb, the result is automatically copied to the clipboard, ctrl + backspace is supported, before it would display a box symbol, replaced -> with IsPr, just put in a number that you wanna find out if its prime or not, it will say yes or no depending on if that number is prime or not, IsPrime from RosettaCode (https rosettacode.org /wiki/Primality_by_trial_division#AutoHotkey),  Broken Link for safety factorial was fixed, and now uses a function that I made, ZTrim() will just trim all 0 and the decimal point, because when dividing, you can either floor it or divide normally, but when normal, it appears like 4.00000000, I could use SetFormat yes, but several problems with it, like when you do want decimals what do you do, so I created Z(ero)Trim(), and one last thing, the ctrl backspace thing, yeah it works on all ahk gui's with this code, not just the calculator, but if you only want it for the calculator just replace ahk_class AutoHotkeyGUI with Calculator v(current version)
 ;Calculator v1.3.1: Posted to the forums and minor text fixes
 ;Calculator v1.4: yup jumping directly to 1.4 because huge change again lmao, so new form of operating with a pratt parser and HUGE THANKS TO u/CloakerSmoker I LOVE YOU XD, added statusbar displaying your last calculation and for displaying your result without pressing enter before, added menu items to the calculator which are Type (yes i'll add more calculator types meaning i'll start using pastebin instead of posting directly to reddit) Clear which uh, clears the edit? and History which is still in development (I actually don't know how to store at least 10 previous calculations, but then have them overwrite in order, might be using an array), also I have a question, if I do 30+5-5+3+3+3+3+3+3+3+3+3+3, it displays 0, as if it was doing 30+5-(5+3+3+3+3+3+3+3+3+3+3), can this be fixed? thanks, minor text fixes, and name change inspired by u/neunmalelf, thanks
+;Calculator v1.4.1: minor bug and text fixes, and History is now available, also uploaded to GitHub
 name := "MicroCalculator v1.4"
 Gui, Add, Edit, x12 y9 w120 h70 vEdit hwndHandle gEdit,
 Gui, Add, Button, x12 y79 w30 h20 g!, n!
@@ -39,7 +40,7 @@ Gui, Add, Button, x42 y119 w30 h20 g8, 8
 Gui, Add, Button, x72 y119 w30 h20 g9, 9
 Gui, Add, StatusBar, gSB vSB, Welcome!
 SB_SetParts(73)
-Menu, Menu, Add, Type
+Menu, Menu, Add, CType
 Menu, Menu, Add, Clear
 Menu, History, Add, 1, History
 Menu, History, Add, 2, History
@@ -55,9 +56,13 @@ Menu, Menu, Add, History, :History
 Gui, Menu, Menu
 return
 
-F3::Gui, Show, h222 w145, %name%
+F3::Gui, Show, h222 w146, %name%
 
 FocusBack:
+history++
+Menu, History, Rename, %history%&, %Edit%=%numsym%
+if (history = 10)
+	history := 0
 GuiControl, Text, Edit1, %numsym%
 GuiControl, Focus, Edit1 
 SendMessage, 0xB1, -2, -1,, ahk_id %Handle%
@@ -82,11 +87,16 @@ Goto, Edit
 return
 
 History:
+GuiControl, Text, Edit1, % StrReplace(SubStr(A_ThisMenuItem, 1, InStr(A_ThisMenuItem, "=")), "=")
+GuiControl, Focus, Edit1 
+SendMessage, 0xB1, -2, -1,, ahk_id %Handle%
+SendMessage, 0xB7,,,, ahk_id %Handle%
+Goto, Edit
 return
 
-Type:
+CType:
 Gui, +OwnDialogs
-MsgBox, 262192, Dev Note, This is still WIP!!, 0
+MsgBox, 262192, Dev Note, This is still a WIP!!, 0
 return
 
 Clear:
