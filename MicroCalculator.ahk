@@ -10,7 +10,7 @@
 ;Calculator v1.3.1: Posted to the forums and minor text fixes
 ;Calculator v1.4: yup jumping directly to 1.4 because huge change again lmao, so new form of operating with a pratt parser and HUGE THANKS TO u/CloakerSmoker I LOVE YOU XD, added statusbar displaying your last calculation and for displaying your result without pressing enter before, added menu items to the calculator which are Type (yes i'll add more calculator types meaning i'll start using pastebin instead of posting directly to reddit) Clear which uh, clears the edit? and History which is still in development (I actually don't know how to store at least 10 previous calculations, but then have them overwrite in order, might be using an array), also I have a question, if I do 30+5-5+3+3+3+3+3+3+3+3+3+3, it displays 0, as if it was doing 30+5-(5+3+3+3+3+3+3+3+3+3+3), can this be fixed? thanks, minor text fixes, and name change inspired by u/neunmalelf, thanks
 ;Calculator v1.4.1: minor bug and text fixes, and History is now available, also uploaded to GitHub
-name := "MicroCalculator v1.4"
+name := "MicroCalculator v1.4.1"
 Gui, Add, Edit, x12 y9 w120 h70 vEdit hwndHandle gEdit,
 Gui, Add, Button, x12 y79 w30 h20 g!, n!
 Gui, Add, CheckBox, x42 y79 w30 h20 gAOT, #
