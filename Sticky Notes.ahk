@@ -1,4 +1,4 @@
-﻿if !(FileExist(A_Desktop "\StickyNotes.ini"))
+if !(FileExist(A_Desktop "\StickyNotes.ini"))
 {
 	TNames := "Untitled"
 	Gui, Add, Tab3, hwndtab vcurrentTab, %TNames% 
@@ -15,7 +15,7 @@ else
 		Gui, Tab, %A_Index%
 		IniRead, EditVar, %A_Desktop%\StickyNotes.ini, StickyNotes, %A_LoopField%
 		StringTrimRight, EditVar, EditVar, 1
-		Loop, Parse, EditVar, |
+		Loop, Parse, EditVar, \
 		{
 			EditPut .= A_LoopField "`n"
 		}
@@ -30,18 +30,27 @@ Gui, Add, Button, gSave, Save
 Gui, Add, Button, gNew x+5, New
 Gui, Add, Button, gDelete x+5, Delete Last
 Gui, Add, Button, gChangeName x+5, Change Name
+Gui, Add, Button, gAddFiles x+5, 🔺
 Gui, Add, CheckBox, gAOT x+5 y255, AOT
 Gui, Show, , Sticky Notes
 Gui, +HwndSN
 return
+
 
 AOT:
 Winset, AlwaysOnTop, Toggle
 return
 
 AutoSave:
-Gui, Show, , *Sticky Notes
-SetTimer, Save, -60000
+ControlGet, CurrentTabName, Tab, , SysTabControl321, A
+GuiControlGet, EditCheck, , Edit%CurrentTabName%
+if InStr(EditCheck, "\")
+	GuiControl, Text, Edit%CurrentTabName%, % StrReplace(EditCheck, "\")
+else
+{
+	Gui, Show, , *Sticky Notes
+	SetTimer, Save, -60000
+}
 return
 
 
@@ -60,7 +69,7 @@ Loop, %tcount%
 	Gui, Submit, NoHide
 	GuiControlGet, Edit, , Edit%A_Index%
 	Loop, Parse, Edit, `n
-		SaveText .= A_LoopField "|" 
+		SaveText .= A_LoopField "\" 
 	TabNames .= currentTab "|"
 	IniWrite, %SaveText%, %A_Desktop%\StickyNotes.ini, StickyNotes, %currentTab%
 	SaveText := ""
@@ -79,6 +88,7 @@ Gui, Add, Edit, w300 h200 gAutoSave
 return
 
 Delete:
+Gui, +OwnDialogs
 tcount := DllCall("SendMessage", "UInt", tab, "UInt", 0x1304, Int, 0, Int, 0)
 if (tcount = 1)
 	MsgBox, 48, Sorry, You are not allowed to delete the last tab remaining, 0
@@ -102,6 +112,7 @@ else
 				Gui, Submit, NoHide
 				names .= "|" currentTab
 			}
+			GuiControl, Text, Edit%tcount%
 			GuiControl, , SysTabControl321, %names%
 			GuiControl, Choose, SysTabControl321, %CurrentTabName%
 			names := ""
@@ -135,4 +146,60 @@ else
 }
 return
 
+GuiDropFiles:
+if (A_GuiEvent = "")
+	return
+else
+{
+	GoSub, New
+	tcount := DllCall("SendMessage", "UInt", tab, "UInt", 0x1304, Int, 0, Int, 0)
+	GuiControl, Choose, SysTabControl321, %tcount%
+	FileRead, FileInput, %A_GuiEvent%
+	Gui, Tab, %tcount%
+	GuiControl, Text, Edit%tcount%, %FileInput%
+	Loop, %tcount%
+	{
+		GuiControl, Choose, SysTabControl321, %A_Index%
+		Gui, Submit, NoHide
+		if (A_Index = tcount)
+			names .= "|" LTrim(SubStr(A_GuiEvent, InStr(A_GuiEvent, "\", , , StrAmt(A_GuiEvent, "\"))), "\")
+		else
+			names .= "|" currentTab
+	}
+	GuiControl, , SysTabControl321, %names%
+}
+return
+
+AddFiles:
+Gui, +OwnDialogs
+FileSelectFile, File, 3, C:\Users\%A_UserName%\Downloads, Open a file, ONLY TEXT YOU- (*.txt; *.ahk; *.doc)
+if (File = "")
+	return
+else
+{
+	GoSub, New
+	tcount := DllCall("SendMessage", "UInt", tab, "UInt", 0x1304, Int, 0, Int, 0)
+	GuiControl, Choose, SysTabControl321, %tcount%
+	FileRead, FileInput, %File%
+	Gui, Tab, %tcount%
+	GuiControl, Text, Edit%tcount%, %FileInput%
+	Loop, %tcount%
+	{
+		GuiControl, Choose, SysTabControl321, %A_Index%
+		Gui, Submit, NoHide
+		if (A_Index = tcount)
+			names .= "|" LTrim(SubStr(File, InStr(File, "\", , , StrAmt(File, "\"))), "\")
+		else
+			names .= "|" currentTab
+	}
+	GuiControl, , SysTabControl321, %names%
+}
+return
+
 F4::Gui, Show
+
+StrAmt(haystack, needle, casesense := false) {
+	StringCaseSense % casesense
+	StrReplace(haystack, needle, , Count)
+	return Count
+}
