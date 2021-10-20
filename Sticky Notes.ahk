@@ -16,6 +16,7 @@ AutoSave=1
 DarkMode=0
 Password=0
 Passcode=
+HotkeyShow=F4
 Color1=0
 Color2=0
 Color3=0
@@ -32,6 +33,9 @@ Color13=0
 Color14=0
 Color15=0
 Color16=0
+
+[LockedNotes]
+LockedNotes=
 )"
 	
 	FileCreateDir, %StickyNotesFolder%
@@ -45,33 +49,48 @@ IniRead, AutoS, %StickyNotesIni%, Settings, AutoSave
 IniRead, DarkMode, %StickyNotesIni%, Settings, DarkMode
 IniRead, Password, %StickyNotesIni%, Settings, Password
 IniRead, Passcode, %StickyNotesIni%, Settings, Passcode
+IniRead, HotkeyShow, %StickyNotesIni%, Settings, HotkeyShow
 IniRead, TabCheckRead, %StickyNotesIni%, StickyNotes, TabNames
-if (TabCheckRead = "ERROR")
+Hotkey, %HotkeyShow%, PasscodeCheckEnter
+if (TabCheckRead == "ERROR")
 {
 	TNames := "Untitled"
-	Gui, Add, Tab3, hwndtab vcurrentTab, %TNames% 
+	Menu, SubSettings, Add, %TNames%, LockSN
+	Gui, Add, Tab3, hwndtab vcurrentTab gTab, %TNames% 
 	Gui, Add, Edit, w300 h200 gAutoSave c%TextC%
 }
 else
 {
 	IniRead, TNames, %StickyNotesIni%, StickyNotes, TabNames
-	Gui, Add, Tab3, hwndtab vcurrentTab, %TNames%
+	Gui, Add, Tab3, hwndtab vcurrentTab gTab, %TNames%
 	tcount := DllCall("SendMessage", "UInt", tab, "UInt", 0x1304, Int, 0, Int, 0)
 	StringTrimRight, TNames, TNames, 1
 	Loop, Parse, TNames, |
 	{
+		Menu, SubSettings, Add, %A_LoopField%, LockSN
+		IniRead, NotesCheck, %StickyNotesIni%, LockedNotes, %A_LoopField%
+		if (NotesCheck == "ERROR")
+			Goto, Continue
+		Menu, SubSettings, ToggleCheck, %A_LoopField%
+		Continue:
 		Gui, Tab, %A_Index%
 		IniRead, EditVar, %StickyNotesIni%, StickyNotes, %A_LoopField%
 		StringTrimRight, EditVar, EditVar, 1
 		Loop, Parse, EditVar, \
-		{
 			EditPut .= A_LoopField "`n"
-		}
 		StringTrimRight, EditPut, Editput, 1
 		Gui, Add, Edit, w300 h200 gAutoSave c%TextC%, %EditPut%
 		EditPut := EditVar := ""
 	}
 }
+
+
+Menu, Edit, Add, Search with Browser, Search
+Menu, Edit, Add
+Menu, Edit, Add, Time/Date`tF5, TimeDate
+Menu, StickyNotes, Add, Lock Sticky Note, :SubSettings
+Menu, StickyNotes, Add, Edit, :Edit
+Gui, Menu, StickyNotes
 Gui, Color, , %EditC%
 Gui, Tab
 Gui, Add, Button, gSave, Save
@@ -100,6 +119,8 @@ Gui, Settings:Add, CheckBox, +Checked%DarkMode% gDM vDM, Dark Mode
 Gui, Settings:Add, CheckBox, +Checked%Password% gPW vPW w200, Password
 Gui, Settings:Add, Edit, Password w120 vPC, %Passcode%
 GuiControl, Settings:Enable%Password%, Edit3
+Gui, Settings:Add, Text, , Hotkey to show Sticky Notes
+Gui, Settings:Add, Hotkey, vHotkey, %HotkeyShow%
 Gui, Settings:Add, Button, gApply, Apply
 Gui, Settings:+ToolWindow +Owner
 Col:=0xFF0000
@@ -111,38 +132,110 @@ Loop 16
 }
 return
 
+Search:
+Gst := Gst()
+if (Gst = "")
+	return
+else
+	Run, http://www.google.com/search?q=%Gst%
+return
+
+TimeDate:
+Gui, Submit, NoHide
+ControlGet, CurrentTabName, Tab, , SysTabControl321, A
+GuiControlGet, Edit, , Edit%CurrentTabName%
+GuiControl, Text, Edit%CurrentTabName%, % Edit . LTrim((A_Hour > 12 ? A_Hour-12 ":" A_Min " PM" : A_Hour ":" A_Min " AM"), 0) " "LTrim(A_Mon, 0) "/"A_DD "/"A_YYYY
+return
+
+LockSN:
+IniRead, NotesCheck, %StickyNotesIni%, LockedNotes, %A_ThisMenuItem%
+if (NotesCheck == "ERROR")
+{
+	InputBox, NotePasscode, Password, Input a password for %A_ThisMenuItem%, , 150, 140
+	if (ErrorLevel = 1)
+		return
+	else
+	{
+		Menu, SubSettings, ToggleCheck, %A_ThisMenuItem%
+		IniWrite, %NotePasscode%, %StickyNotesIni%, LockedNotes, %A_ThisMenuItem%
+	}
+}
+else
+{
+	InputBox, NotesPasscode, Password, Input your password (Case Sensitive), HIDE, 150, 140
+	if (ErrorLevel = 1)
+		return
+	else
+	{
+		if (NotesPasscode == NotesCheck)
+		{
+			Menu, SubSettings, ToggleCheck, %A_ThisMenuItem%
+			IniDelete, %StickyNotesIni%, LockedNotes, %A_ThisMenuItem%
+		}
+	}
+}
+return
+
+Tab:
+Gui, Submit, NoHide
+IniRead, TabChecking, %StickyNotesIni%, LockedNotes, %currentTab%
+if (TabChecking == "ERROR")
+	TabBackupName := currentTab
+else
+{
+	Gui, Hide
+	InputBoxLabel:
+	InputBox, NotesCheck, %currentTab%, Input your password for %currentTab% (Case Sensitive), HIDE, 150, 140
+	if (ErrorLevel = 1)
+	{
+		Gui, Show
+		GuiControl, ChooseString, SysTabControl321, %TabBackupName%
+	}
+	else
+	{
+		if (NotesCheck == TabChecking)
+			Gui, Show
+		else
+			Goto, InputBoxLabel
+	}
+}
+return
+
 Apply:
 Gui, Settings:Submit, NoHide
 if (PW = 1)
 {
-	InputBox, PasscodeCheck, Input your password, Input the password to confirm
-	if (PasscodeCheck == Passcode)
-	{
-		Gui, Settings:Submit
-		Gui, 1:Default
-		tcount := DllCall("SendMessage", "UInt", tab, "UInt", 0x1304, Int, 0, Int, 0)
-		Loop, %tcount%
-		{
-			Gui, Tab, %A_Index%
-			Gui, Color, , %EditColor%
-			GuiControl, +c%TextColor%, Edit%A_Index%
-		}
-		IniWrite, %EditColor%, %StickyNotesIni%, Settings, EditColor
-		IniWrite, %TextColor%, %StickyNotesIni%, Settings, TextColor
-		IniWrite, %ATColor%, %StickyNotesIni%, Settings, AutomaticTextColor
-		IniWrite, %SoS%, %StickyNotesIni%, Settings, ShowOnStartup
-		IniWrite, %SoS%, %StickyNotesIni%, Settings, ShowOnStartup
-		IniWrite, %DM%, %StickyNotesIni%, Settings, DarkMode
-		IniWrite, %PW%, %StickyNotesIni%, Settings, Password
-		IniWrite, %PC%, %StickyNotesIni%, Settings, Passcode
-		Password := PW = 0 ? 0 : 1
-	}
+	InputBox, PasscodeCheck, Password, Input your password (Case Sensitive), ,150, 140
+	if (PasscodeCheck == PC)
+		Goto, WriteApply
 	else
-	{
 		ToolTipTimer("Password was not the same, try again", 2000)
-		return
-	}
 }
+else
+	Goto, WriteApply
+return
+
+WriteApply:
+Gui, Settings:Submit
+Gui, 1:Default
+tcount := DllCall("SendMessage", "UInt", tab, "UInt", 0x1304, Int, 0, Int, 0)
+Loop, %tcount%
+{
+	Gui, Tab, %A_Index%
+	Gui, Color, , %EditColor%
+	GuiControl, +c%TextColor%, Edit%A_Index%
+}
+IniWrite, %EditColor%, %StickyNotesIni%, Settings, EditColor
+IniWrite, %TextColor%, %StickyNotesIni%, Settings, TextColor
+IniWrite, %ATColor%, %StickyNotesIni%, Settings, AutomaticTextColor
+IniWrite, %SoS%, %StickyNotesIni%, Settings, ShowOnStartup
+IniWrite, %SoS%, %StickyNotesIni%, Settings, ShowOnStartup
+IniWrite, %DM%, %StickyNotesIni%, Settings, DarkMode
+IniWrite, %PW%, %StickyNotesIni%, Settings, Password
+IniWrite, %PC%, %StickyNotesIni%, Settings, Passcode
+IniWrite, %Hotkey%, %StickyNotesIni%, Settings, HotkeyShow
+Hotkey, %HotkeyShow%, PasscodeCheckEnter
+Password := PW = 0 ? 0 : 1
 return
 
 PW:
@@ -161,7 +254,7 @@ if (PW = 0)
 	}
 	else
 	{
-		InputBox, PasswordCheck, Input your password, You must input your password first (Case Sensitive)
+		InputBox, PasswordCheck, Password, Input your password (Case Sensitive), HIDE, 150, 140
 		if (PasswordCheck == Passcode)
 		{
 			GuiControl, Settings:Disable, Edit3
@@ -233,9 +326,7 @@ return
 
 Settings:
 GuiControlGet, CheckifAOT, , Button7
-WinGetPos, SnX, SnY, , , ahk_id %SN%
-SnX += 70, SnY += 15
-Gui, Settings:Show, x%SnX% y%SnY%, Settings
+Gui, Settings:Show, , Settings
 if CheckifAOT
 	Gui, Settings:+AlwaysOnTop
 return
@@ -257,11 +348,9 @@ else
 }
 return
 
-$^s::
+~^s::
 if (WinActive("ahk_id" SN))
 	Goto, Save
-else
-	Send, ^s
 return
 
 Save:
@@ -274,7 +363,7 @@ Loop, %tcount%
 	GuiControlGet, Edit, , Edit%A_Index%
 	Loop, Parse, Edit, `n
 		SaveText .= A_LoopField "\" 
-	TabNames .= currentTab "|"
+	TabNames .= currentTab "|" 
 	IniWrite, %SaveText%, %StickyNotesIni%, StickyNotes, %currentTab%
 	SaveText := ""
 }
@@ -288,7 +377,9 @@ New:
 GuiControl, , SysTabControl321, Untitled
 tcount := DllCall("SendMessage", "UInt", tab, "UInt", 0x1304, Int, 0, Int, 0)
 Gui, Tab, %tcount%
-Gui, Add, Edit, w300 h200 gAutoSave
+Gui, Add, Edit, w300 h200 gAutoSave c%TextC%
+Menu, SubSettings, Add, Untitled, LockSN
+Gui, Show, , Sticky Notes
 return
 
 Delete:
@@ -319,6 +410,7 @@ else
 			GuiControl, Choose, SysTabControl321, %tcount%
 			Gui, Submit, NoHide
 			IniDelete, %StickyNotesIni%, StickyNotes, %currentTab%
+			Menu, SubSettings, Delete, %currentTab%
 			GuiControl, Text, Edit%tcount%
 			GuiControl, , SysTabControl321, %names%
 			GoSub, Save
@@ -332,7 +424,7 @@ return
 ChangeName:
 Gui, +OwnDialogs
 ControlGet, CurrentTabName, Tab, , SysTabControl321, A
-InputBox, NewName, Sticky Notes, Put the new name, , 130, 125
+InputBox, NewName, Change Name, Put the new name, , 130, 125
 if (NewName = "TabNames")
 	MsgBox, 8208, Error, Sorry but you can't use that name, it would interfere with the saving system!
 else
@@ -346,6 +438,7 @@ else
 			names .= A_Index=CurrentTabName ? "|" NewName : "|" currentTab
 		}
 		GuiControl, , SysTabControl321, %names%
+		Menu, SubSettings, Rename, %CurrentTabName%&, %NewName%
 		GuiControl, Choose, SysTabControl321, %CurrentTabName%
 		names := ""
 	}
@@ -378,10 +471,9 @@ else
 return
 
 PasscodeCheckEnter:
-F4::
 if (Password = 1)
 {
-	InputBox, PasswordCheck, Input your password, Input your password (Case Sensitive)
+	InputBox, PasswordCheck, Login, Input your password (Case Sensitive), HIDE, 150, 140
 	if (ErrorLevel = 1)
 		return
 	else
@@ -443,4 +535,20 @@ ToolTipTimer(Text, Timeout, x:="x", y:="y", WhichToolTip:=1) {
 	RemoveToolTip:
 	ToolTip
 	return
+}
+Gst() {   ; GetSelectedText by Learning one 
+	IsClipEmpty := (Clipboard = "") ? 1 : 0
+	if !IsClipEmpty  {
+		ClipboardBackup := ClipboardAll
+		While !(Clipboard = "")  {
+			Clipboard =
+			Sleep, 10
+		}
+	}
+	Send, ^c
+	ClipWait, 0.1
+	ToReturn := Clipboard, Clipboard := ClipboardBackup
+	if !IsClipEmpty
+		ClipWait, 0.5, 1
+	return ToReturn
 }
