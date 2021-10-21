@@ -665,3 +665,34 @@ Collatz(n) {
         }
     return count+1
 }
+Similarity(String1, String2, returnwhat := 0){
+	StringSplit, A, String1
+	StringSplit, B, String2
+	LoopCount := (A0 > B0) ? A0 : B0
+	Loop, %LoopCount%
+	{
+		if (A%A_Index% = B%A_index%)
+		{
+			matches++
+			matchingchars .= A%A_Index%
+		}
+		else
+		{
+			unmatches++
+			StringSplit, out, unmatchingchars, |
+			out1 .= A%A_Index%
+			out2 .= B%A_Index%
+			unmatchingchars :=  out1 "|" out2
+		}
+	}
+	if not returnwhat
+		return (matches = "") ? 0 : Round(matches/LoopCount*100)
+	if (returnwhat = 1)
+		return (matches = "") ? 0 : matches
+	if (returnwhat = 2)
+		return unmatches
+	if (returnwhat = 3)
+		return matchingchars
+	if (returnwhat = 4)
+		return unmatchingchars
+}
