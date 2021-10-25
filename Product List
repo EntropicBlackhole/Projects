@@ -1,0 +1,158 @@
+#SingleInstance Force
+#NoEnv
+SetWorkingDir %A_ScriptDir%
+SetBatchLines -1
+SysGet, VSBW, 2 ; SM_CXVSCROLL
+Rows := 30
+MinW := 96 - VSBW
+MaxW := 96
+Col2W := Max
+Fol := "C:\Users\" A_UserName "\AppData\Local\EPBHs Creations\Product List"
+Ini := Fol "\Items.ini"
+FileCreateDir, %Fol%
+IniRead, CreateItems, %Ini%, Items
+Gui, Add, ListView, xm ym w337 h170 +LV0x10000 -Multi, Name|Price
+Gui, Font, s30
+Gui, Add, Button, xm y+5 w50 h45 gAddShow, +
+Gui, Add, Button, x+5 w50 h45 gDelete, -
+Gui, Font
+Gui, Add, Button, x+5 w50 h20 gModifyShow, &Modify
+Gui, Add, Button, y+5 w50 h20 gSave, &Save
+Gui, Add, CheckBox, x+5 yp-24 w45 h20 gAOT, AOT
+Gui, Add, Button, y+4 w47 h20 gReload, &Reload
+Gui, Add, Edit, x+5 yp-24 w120 vSearcher gSearch, 
+Gui, Add, DropDownList, y+1 w120 AltSubmit vFilter gSearch, Name||Price
+Gui, +hwndMainGUI
+Loop, Parse, CreateItems, `n
+{
+	ItemsCreated := StrSplit(A_LoopField, "=")
+	LV_Add(, ItemsCreated[1], ItemsCreated[2])
+}
+LV_ModifyCol(1, 276)
+Gui, Show, , Product List
+GoSub, SubLV
+ControlGet, BackupListItems, List, , SysListView321, ahk_id %MainGUI%
+Gui, New, , Add
+Gui, Add:+ToolWindow
+Gui, Add:Add, Text, , Name
+Gui, Add:Add, Edit, w90 h20 vNameAdd
+Gui, Add:Add, Edit, w50 h20 vPriceAdd
+Gui, Add:Add, UpDown, , 1
+Gui, Add:Add, Text, x+5 yp+3 w35, Price
+Gui, Add:Add, Button, xm w90 gAdd, Add
+return
+
+AddShow:
+GuiControl, Add:Text, Button1, Add
+GuiControl, Add:+gAdd, Button1
+GuiControl, Add:Text, Edit1
+GuiControl, Add:Text, Edit2
+Gui, Add:Show, , Add
+return
+
+Add:
+Gui, Add:Submit
+Gui, 1:Default
+LV_Add(, NameAdd, PriceAdd)
+GoSub, Save
+return
+
+Delete:
+if CheckItemSelected()
+{
+	MsgBox 0x4, Product List, Are you sure you want to delete this item?
+	IfMsgBox Yes
+		if CheckItem
+		{
+			LV_GetText(out, CheckItem)
+			IniDelete, %Ini%, Items, %out%
+			LV_Delete(CheckItem)
+			GoSub, Save
+		}
+}
+else
+	MsgBox 0x30, Product List, Please Select A Row First
+return
+
+ModifyShow:
+if CheckItemSelected()
+{
+	GuiControl, Add:Text, Button1, Modify
+	GuiControl, Add:+gModify, Button1
+	LV_GetText(NameGet, CheckItem)
+	LV_GetText(PriceGet, CheckItem, 2)
+	GuiControl, Add:Text, Edit1, %NameGet%
+	GuiControl, Add:Text, Edit2, %PriceGet%
+	Gui, Add:Show, , Modify
+}
+else
+	MsgBox 0x30, Product List, Please Select A Row First
+return
+
+Modify:
+Gui, Add:Submit
+Gui, 1:Default
+LV_Modify(CheckItem, , NameAdd, PriceAdd)
+IniDelete, %Ini%, Items, %NameGet%
+BackupListItems := StrReplace(BackupListItems, NameGet, NameAdd)
+BackupListItems := StrReplace(BackupListItems, PriceGet, PriceAdd)
+GoSub, Save
+return
+
+Save:
+ControlGet, ListOfItems, List, , SysListView321, ahk_id %MainGUI%
+Loop, Parse, ListOfItems, `n
+{
+	StringSplit, Items, A_LoopField, %A_Tab%
+	IniWrite, %Items2%, %Ini%, Items, %Items1%
+}
+return
+
+AOT:
+WinSet, AlwaysOnTop, , ahk_id %MainGUI%
+return
+
+Reload:
+Reload
+return
+
+Search:
+Gui, Submit, NoHide
+LV_Delete()
+Loop, Parse, BackupListItems, `n
+{
+	StringSplit, Out, A_LoopField, %A_Tab%
+	if Searcher
+		if InStr(Out%Filter%, Searcher)
+		{
+			GoSub, Save
+			LV_Add(, Out1, Out2)
+		}
+	if not Searcher
+		LV_Add(, Out1, Out2)
+}
+return
+
+SubLV:
+Gui, 1:Default
+If (LV_GetCount() > Rows) {
+   If (Col2W <> MinW)
+      LV_ModifyCol(2, Col2W := MinW)
+} Else {
+   If (Col2W <> MaxW)
+      LV_ModifyCol(2, Col2W := MaxW)
+}
+LV_ModifyCol(2, 40)
+return
+
+F6::Gui, Show
+
+CheckItemSelected() {
+	global CheckItem
+	TotalSelectedItems := % LV_GetCount("S")
+	CheckItem := LV_GetNext()
+	if (TotalSelectedItems >= 1)
+		return true
+	else
+		return false
+}
