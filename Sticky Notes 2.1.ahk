@@ -30,7 +30,7 @@ IniRead, DarkMode, %Ini%, Settings, DarkMode
 IniRead, Password, %Ini%, Settings, Password
 IniRead, Passcode, %Ini%, Settings, Passcode
 IniRead, TNames, %Ini%, Settings, TabNames
-URL := "https://raw.githubusercontent.com/EntropicBlackhole/Projects/main/Sticky%20Notes%202.1.ahk" ;This will only work if the script isnt compiled
+URL := "https://raw.githubusercontent.com/EntropicBlackhole/Projects/main/Sticky%20Notes%202.2.ahk" ;This will only work if the script isnt compiled
 Gui, Add, Tab3, hwndtab vcurrentTab gTab, %TNames%
 if (TNames = "Untitled")
 	Gui, Add, Edit, w300 h200 gAutoSave c%TextC%
