@@ -50,8 +50,8 @@ Gui, Add, Button, gSave, Save
 Gui, Add, Button, gNew x+5, New
 Gui, Add, Button, gDelete x+5, Delete
 Gui, Add, Button, gChangeName x+5, Change Name
-Gui, Add, Button, gAddFiles x+5, 🔺
-Gui, Add, Button, gSettings x+5, ⚙
+Gui, Add, Button, gAddFiles x+5, Up
+Gui, Add, Button, gSettings x+5, Set
 Gui, Add, CheckBox, gAOT x+5 yp+4, AOT
 if (StartupShow = 1)
 	GoSub, PasscodeCheckEnter
