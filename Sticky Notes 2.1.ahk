@@ -1,6 +1,6 @@
-#SingleInstance, Force ;SN stands for Sticky Notes
-Fol := "C:\Users\" . A_UserName "\AppData\Local\EPBHs Creations\Sticky Notes" ;SN Folder
-Ini := Fol . "\Config.ini" ;Config File
+#SingleInstance, Force
+Fol := "C:\Users\" . A_UserName "\AppData\Local\EPBHs Creations\Sticky Notes"
+Ini := Fol . "\Config.ini"
 URLFile := Fol . "\Update.epbh"
 if !FileExist(Ini)
 {
@@ -21,19 +21,19 @@ TabNames=Untitled
 	FileAppend, %Settings%, %Ini%
 	FileAppend, , %URLFile%
 }
-IniRead, EditC, %Ini%, Settings, EditColor ;Checks edit control color
-IniRead, TextC, %Ini%, Settings, TextColor ;Checks text control color
-IniRead, ATC, %Ini%, Settings, AutomaticTextColor ;Checks the automatic text color
-IniRead, StartupShow, %Ini%, Settings, ShowOnStartup ;Checks if it'll show up on Startup
-IniRead, AutoS, %Ini%, Settings, AutoSave ;Checks if it'll Autosave
-IniRead, DarkMode, %Ini%, Settings, DarkMode ;Checks if DarkMode will be activated
-IniRead, Password, %Ini%, Settings, Password ;Checks if it has a password
-IniRead, Passcode, %Ini%, Settings, Passcode ;Checks what the password if
-IniRead, TNames, %Ini%, Settings, TabNames ;Checks the tab names
-URL := "https://raw.githubusercontent.com/EntropicBlackhole/Projects/main/Sticky%20Notes%202.1.ahk" ;This is the update link
-Gui, Add, Tab3, hwndtab vcurrentTab gTab, %TNames% ;Adds the tab control
+IniRead, EditC, %Ini%, Settings, EditColor
+IniRead, TextC, %Ini%, Settings, TextColor
+IniRead, ATC, %Ini%, Settings, AutomaticTextColor
+IniRead, StartupShow, %Ini%, Settings, ShowOnStartup
+IniRead, AutoS, %Ini%, Settings, AutoSave
+IniRead, DarkMode, %Ini%, Settings, DarkMode
+IniRead, Password, %Ini%, Settings, Password
+IniRead, Passcode, %Ini%, Settings, Passcode
+IniRead, TNames, %Ini%, Settings, TabNames
+URL := "https://raw.githubusercontent.com/EntropicBlackhole/Projects/main/Sticky%20Notes%202.1.ahk" ;This will only work if the script isnt compiled
+Gui, Add, Tab3, hwndtab vcurrentTab gTab, %TNames%
 if (TNames = "Untitled")
-	Gui, Add, Edit, w300 h200 gAutoSave c%TextC% ;if new, add Untitled
+	Gui, Add, Edit, w300 h200 gAutoSave c%TextC%
 else
 {
 	tcount := DllCall("SendMessage", "UInt", tab, "UInt", 0x1304, Int, 0, Int, 0)
@@ -80,8 +80,8 @@ if !(A_IsCompiled)
 	if !(UpdateCheck = "404: Not Found")
 		GuiControl, Settings:Enable, Update
 }
-if FileExist(Fol "\Sticky Notes.ini") ;this is  to check if version 1.0 exists on your device, if so, pass all the stuff onto here
-{ ;yay backwards compatibality
+if FileExist(Fol "\Sticky Notes.ini")
+{
 	IniRead, OldTNames, %Fol%\Sticky Notes.ini, StickyNotes, TabNames
 	Loop, Parse, % RTrim(OldTNames, "|"), |
 	{
@@ -248,25 +248,7 @@ Loop, Parse, TNames, |
 	FileDelete, %Fol%/%A_LoopField%.txt
 	FileAppend, %Edit%, %Fol%/%A_LoopField%.txt
 }
-Gui, 1:Show, NoActivate, Sticky Notes ;the comment below was the old version
-/*
-ControlGet, CurrentTabName, Tab, , SysTabControl321, A
-tcount := DllCall("SendMessage", "UInt", tab, "UInt", 0x1304, Int, 0, Int, 0)
-Loop, %tcount%
-{
-	GuiControl, Choose, SysTabControl321, %A_Index%
-	Gui, Submit, NoHide
-	GuiControlGet, Edit, , Edit%A_Index%
-	FileDelete, %Fol%/%currentTab%.txt
-	FileAppend, Edit, %Fol%/%currentTab%.txt
-	TabNames .= currentTab "|"
-	SaveText := ""
-}
-IniWrite, %TabNames%, %Ini%, Settings, TabNames
-TabNames := ""
-GuiControl, Choose, SysTabControl321, %CurrentTabName%
-Gui, Show, NoActivate, Sticky Notes
-*/
+Gui, 1:Show, NoActivate, Sticky Notes
 return
 
 New:
@@ -309,37 +291,13 @@ else
 		GuiControl, , SysTabControl321, |%TNames%
 		IniWrite, %TNames%, %Ini%, Settings, TabNames
 		GuiControl, , Edit%tcount%
-		/* ;some more stuff
-		loop tcount, until you get to the current tab
-		then using ControlGet add one to the index to get the next edit's value, place that in the current edit, and continue
-		once you have reached the final one, stop
-		
-		
-		==============
-		ControlGet, CurrentTabName, Tab, , SysTabControl321, A ;CurrentTabName is the tab number for some reason
-		tcount := DllCall("SendMessage", "UInt", tab, "UInt", 0x1304, Int, 0, Int, 0)
-		Loop, % tcount-1
-		{
-			GuiControl, Choose, SysTabControl321, %A_Index%
-			Gui, Submit, NoHide
-			names .= "|" currentTab
-		}
-		GuiControl, Choose, SysTabControl321, %tcount%
-		Gui, Submit, NoHide
-		IniDelete, %Ini%, StickyNotes, %currentTab%
-		GuiControl, Text, Edit%tcount%
-		GuiControl, , SysTabControl321, %names%
-		GoSub, Save
-		GuiControl, Choose, SysTabControl321, %CurrentTabName%
-		names := ""
-		*/
 	}
 	IfMsgBox, No
 		return
 }
 return
 
-ChangeName: ; and also rewrite ini
+ChangeName:
 Gui, Submit, NoHide
 Gui, +OwnDialogs
 ControlGet, TabNum, Tab, , SysTabControl321, ahk_id %SN%
@@ -365,7 +323,7 @@ if (ErrorLevel = 0)
 }
 return
 
-AddFiles: ;put the file name in TNames and also IniWrite it 
+AddFiles:
 Gui, +OwnDialogs
 FileSelectFile, File, 3, C:\Users\%A_UserName%\Downloads, Open a file, Only text (*.txt)
 GuiDropFiles:
@@ -383,22 +341,6 @@ else
 	Gui, Add, Edit, w300 h200 gAutoSave, %FileInput%
 	TNames .= "|" OutNameNoExt
 	IniWrite, %TNames%, Ini, Settings, TabNames
-	/*
-	GoSub, New
-	tcount := DllCall("SendMessage", "UInt", tab, "UInt", 0x1304, Int, 0, Int, 0)
-	GuiControl, Choose, SysTabControl321, %tcount%
-	FileRead, FileInput, %File%
-	Gui, Tab, %tcount%
-	GuiControl, Text, Edit%tcount%, %FileInput%
-	Loop, %tcount%
-	{
-		GuiControl, Choose, SysTabControl321, %A_Index%
-		Gui, Submit, NoHide
-		SplitPath, File, , , , OutNameNoExt
-		names .= (A_Index = tcount) ? ("|" OutNameNoExt) : "|" currentTab
-	}
-	GuiControl, , SysTabControl321, %names%
-	*/
 }
 return
 
