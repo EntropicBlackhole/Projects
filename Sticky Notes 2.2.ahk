@@ -30,7 +30,7 @@ IniRead, DarkMode, %Ini%, Settings, DarkMode
 IniRead, Password, %Ini%, Settings, Password
 IniRead, Passcode, %Ini%, Settings, Passcode
 IniRead, TNames, %Ini%, Settings, TabNames
-URL := "https://raw.githubusercontent.com/EntropicBlackhole/Projects/main/Sticky%20Notes%202.2.ahk" ;This will only work if the script isnt compiled
+URL := "https://raw.githubusercontent.com/EntropicBlackhole/Projects/main/Sticky%20Notes%202.3.ahk" ;This will only work if the script isnt compiled
 Gui, Add, Tab3, hwndtab vcurrentTab gTab, %TNames%
 if (TNames = "Untitled")
 	Gui, Add, Edit, w300 h200 gAutoSave c%TextC%
@@ -103,6 +103,8 @@ if FileExist(Fol "\Sticky Notes.ini")
 	FileDelete, %Fol%\Sticky Notes.ini
 	Reload
 }
+tcount := DllCall("SendMessage", "UInt", tab, "UInt", 0x1304, Int, 0, Int, 0)
+EditNum := tcount
 return
 
 Update:
@@ -144,11 +146,11 @@ IniWrite, %EditColor%, %Ini%, Settings, EditColor
 IniWrite, %TextColor%, %Ini%, Settings, TextColor
 IniWrite, %ATColor%, %Ini%, Settings, AutomaticTextColor
 IniWrite, %SoS%, %Ini%, Settings, ShowOnStartup
+IniWrite, %AS%, %Ini%, Settings, AutoSave
 IniWrite, %DM%, %Ini%, Settings, DarkMode
 IniWrite, %PW%, %Ini%, Settings, Password
 IniWrite, %PC%, %Ini%, Settings, Passcode
-Password := PW
-Passcode := PC
+EditC := EditColor, TextC := TextColor, ATC := ATColor, StartupShow := SoS, AutoS := AS, DarkMode := DM, Password := PW, Passcode := PC
 return
 
 PW:
@@ -227,7 +229,7 @@ Winset, AlwaysOnTop, Toggle
 return
 
 Tab:
-ControlGet, TabNum, Tab, , SysTabControl321, A
+ControlGet, TabNum, Tab, , SysTabControl321, ahk_id %SN%
 return
 
 AutoSave:
@@ -252,14 +254,18 @@ Gui, 1:Show, NoActivate, Sticky Notes
 return
 
 New:
+Loop, Parse, TNames, |
+	if (A_LoopField = Untitled) || (InStr(A_LoopField, "Untitled ("))
 GuiControl, , SysTabControl321, Untitled
 tcount := DllCall("SendMessage", "UInt", tab, "UInt", 0x1304, Int, 0, Int, 0)
 Gui, Tab, %tcount%
-Gui, Add, Edit, w300 h200 gAutoSave
+if !(EditNum >= tcount)
+	Gui, Add, Edit, w300 h200 gAutoSave +c%TextC%
 GuiControl, Choose, SysTabControl321, %tcount%
 TNames .= "|Untitled"
 IniWrite, %TNames%, %Ini%, Settings, TabNames
 FileAppend, , %Fol%\Untitled.txt
+EditNum++
 return
 
 Delete:
@@ -329,18 +335,22 @@ FileSelectFile, File, 3, C:\Users\%A_UserName%\Downloads, Open a file, Only text
 GuiDropFiles:
 if (A_ThisLabel = "GuiDropFiles")
 	File := A_GuiEvent
-if (File = "")
-	return
-else
+if !(File = "")
 {
-	tcount := DllCall("SendMessage", "UInt", tab, "UInt", 0x1304, Int, 0, Int, 0)
 	SplitPath, File, , , , OutNameNoExt
 	GuiControl, , SysTabControl321, %OutNameNoExt%
+	tcount := DllCall("SendMessage", "UInt", tab, "UInt", 0x1304, Int, 0, Int, 0)
+	GuiControl, Choose, SysTabControl321, %tcount%
+	ControlGet, TabNum, Tab, , SysTabControl321, ahk_id %SN%
 	FileRead, FileInput, %File%
 	Gui, Tab, %tcount%
-	Gui, Add, Edit, w300 h200 gAutoSave, %FileInput%
+	if !(EditNum >= tcount)
+		Gui, Add, Edit, w300 h200 gAutoSave +c%TextC%, %FileInput%
+	else
+		GuiControl, , Edit%TabNum%, %FileInput%
 	TNames .= "|" OutNameNoExt
-	IniWrite, %TNames%, Ini, Settings, TabNames
+	IniWrite, %TNames%, %Ini%, Settings, TabNames
+	Goto, Save
 }
 return
 
