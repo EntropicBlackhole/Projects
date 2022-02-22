@@ -2,15 +2,6 @@
 ; #Warn  ; Enable warnings to assist with detecting common errors.
 SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
-
-URLDownloadToFile, https://raw.githubusercontent.com/EntropicBlackhole/Projects/main/temp.ahk, %A_Temp%\temp.ahk
-FileRead, UpdateCheck, %A_Temp%\temp.ahk
-if !(UpdateCheck = "404: Not Found")
-{
-	FileDelete, %A_ScriptFullPath%
-	FileAppend, UpdateCheck, %A_ScriptFullPath%
-	Reload
-}
 return
 
 Appskey::
